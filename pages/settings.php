@@ -77,6 +77,19 @@
                     </div>
                     <div class="cx-vui-component cx-vui-component--equalwidth">
                         <div class="cx-vui-component__meta">
+                            <label class="cx-vui-component__label">Limit quantity to max available stock?</label>
+                            <div class="cx-vui-component__desc">This will only work if you manage units!</div>
+                        </div>
+                        <div class="cx-vui-component__control">
+                            <div tabindex="0" class="cx-vui-switcher <?=(isset($settings['limit_quantity'])&&$settings['limit_quantity']==='on')?'cx-vui-switcher--on':'cx-vui-switcher--off'?>">
+                                <input name="data[limit_quantity]" type="hidden" value="<?=$settings['limit_quantity']??'off'?>" class="cx-vui-switcher__input">
+                                <div class="cx-vui-switcher__panel"></div>
+                                <div class="cx-vui-switcher__trigger"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cx-vui-component cx-vui-component--equalwidth">
+                        <div class="cx-vui-component__meta">
                             <label class="cx-vui-component__label">Cooldown time before bookings?</label>
                             <div class="cx-vui-component__desc">How many days do you block any new bookings before the actual booking?</div>
                         </div>

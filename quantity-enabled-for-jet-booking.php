@@ -4,13 +4,13 @@
  *  Plugin URI:           https://fullstak.nl/
  *  Description:         This plugin enables the quantity field for Jet Booking products without altering the JetBooking plugin.
  *  Author:                Bram Hammer
- *  Version:               1.2.0
+ *  Version:               1.2.2
  *  Author URI:        https://fullstak.nl//
  *  Elementor tested up to: 3.14
  *
  * @link             https://fullstak.nl/
  * @package     Quantity_Enabled_Jet_Booking
- * @version       1.2.0
+ * @version       1.2.2
  * @since          1.0.0
  *
  */
@@ -46,7 +46,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
          * @since 1.8.0
          * @var string
          */
-        private $version = '1.2.0';
+        private $version = '1.2.2';
 
         /**
          * Require Elementor Version
@@ -92,6 +92,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             add_filter( 'woocommerce_widget_cart_item_quantity', [$this,'get_widget_cart_quantity'], 99, 3 );
             add_filter( 'woocommerce_cart_item_subtotal', [$this,'customize_cart_item_subtotal'], 10, 3 );
             add_filter( 'woocommerce_is_sold_individually', [$this, 'woocommerce_is_sold_individually'], 10, 1 );
+            add_filter( 'woocommerce_quantity_input_args', [$this, 'quantity_input_args'], 10, 2 );
 
             // register ajax to add to cart
             add_action( 'wp_ajax_jet_booking_add_cart_single_product', [$this, 'add_cart_product_ajax'], 10 );
@@ -104,6 +105,17 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             add_action( 'admin_menu', [$this,'add_admin'], 99 );
             add_action( 'admin_enqueue_scripts', [$this,'admin_enqueue'] );
 
+        }
+
+        public function quantity_input_args($args, $product)
+        {
+            if($product->get_type() !== 'jet_booking')
+                return $args;
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
+            if(isset($options['limit_quantity']) || $options['limit_quantity'] !== 'on')
+                return $args;
+            $args['max_value'] = count(jet_abaf()->db->get_apartment_units( $product->get_id() ));
+            return $args;
         }
 
         public function save_product_data($product)
@@ -282,7 +294,8 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 'add_to_cart_text' => 'View details',
                 'single_add_to_cart_text' => 'Add to cart',
                 'cooldown' => 0,
-                'warmup' => 0
+                'warmup' => 0,
+                'limit_quantity' => 'off'
             ];
         }
 
@@ -524,6 +537,8 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 return;
             $pid = get_the_ID();
             $product = wc_get_product($pid);
+            if($product->get_type() !== 'jet_booking')
+                return;
             $all_units = jet_abaf()->db->get_apartment_units( $pid );
             $days = [];
             $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
