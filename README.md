@@ -17,6 +17,12 @@ This plugin adds the ability to set the quantity of the Jet Booking plugin witho
 It uses the product units and shows them grouped in the cart etc..
 Some features like the available stock may need some styling to fit in your theme.
 
+**Like the plugin? [Send a small donation that helps me convince my wife to keep doing open source :stuck_out_tongue_winking_eye:!](https://paypal.me/bramhammer)**
+
+## Roadmap
+
+No idea, missing something in this plugin or jet booking? Let me know!
+
 ## Changelog
 
 ### 1.2.0
