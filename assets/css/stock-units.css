@@ -1,0 +1,15 @@
+
+.elementor-product-jet_booking {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.woocommerce-js div.product form.cart div.quantity,
+.woocommerce-js div.product form.cart .button.single_add_to_cart_button {
+    margin-bottom: 0;
+}
+.jet-abaf-product-total {
+    font-weight: 600;
+    padding-top: 10px;
+}
