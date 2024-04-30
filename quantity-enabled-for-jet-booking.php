@@ -96,10 +96,57 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             // register ajax to add to cart
             add_action( 'wp_ajax_jet_booking_add_cart_single_product', [$this, 'add_cart_product_ajax'], 10 );
             add_action( 'wp_ajax_nopriv_jet_booking_add_cart_single_product', [$this, 'add_cart_product_ajax'], 10 );
+
+            add_filter( 'woocommerce_product_data_tabs', [$this, 'add_product_data_tab'], 10, 1 );
+            add_action( 'woocommerce_product_data_panels', [$this, 'quantity_panel'], 10, 0 );
+            add_action( 'woocommerce_admin_process_product_object', [$this, 'save_product_data'], 10, 1 );
             add_action( 'wp_ajax_jet_abaf_qefjb_save_settings', [$this, 'save_settings'] );
             add_action( 'admin_menu', [$this,'add_admin'], 99 );
             add_action( 'admin_enqueue_scripts', [$this,'admin_enqueue'] );
 
+        }
+
+        public function save_product_data($product)
+        {
+            if(isset($_POST['_qefjb_cooldown']))
+                $product->update_meta_data('_qefjb_cooldown', sanitize_text_field($_POST['_qefjb_cooldown']));
+            else
+                $product->delete_meta_data('_qefjb_cooldown');
+            if(isset($_POST['_qefjb_warmup']))
+                $product->update_meta_data('_qefjb_warmup', sanitize_text_field($_POST['_qefjb_warmup']));
+            else
+                $product->delete_meta_data('_qefjb_warmup');
+            $product->save();
+        }
+
+        public function add_product_data_tab($tabs)
+        {
+            $tabs['qefjb'] = [
+                'label' => 'Quantity enabled for Jet Booking',
+                'target' => 'qefjb_product_data',
+                'class' => ['show_if_jet_booking'],
+            ];
+            return $tabs;
+        }
+
+        public function quantity_panel()
+        {
+            echo '<div id="qefjb_product_data" class="panel woocommerce_options_panel show_if_jet_booking">';
+            woocommerce_wp_text_input( [
+                'id'            => '_qefjb_cooldown',
+                'label'         => __( 'Cooldown period', 'quantity-enabled-for-jet-booking' ),
+                'description'   => __( 'How many days do you block any new bookings before the actual booking?', 'quantity-enabled-for-jet-booking' ),
+                'desc_tip'      => 'true',
+                'type'          => 'number'
+            ]);
+            woocommerce_wp_text_input( [
+                'id'            => '_qefjb_warmup',
+                'label'         => __( 'Warmup period', 'quantity-enabled-for-jet-booking' ),
+                'description'   => __( 'How many days do you block any new bookings after the actual booking?', 'quantity-enabled-for-jet-booking' ),
+                'desc_tip'      => 'true',
+                'type'          => 'number'
+            ]);
+            echo '</div>';
         }
 
         public function save_settings()
@@ -107,7 +154,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             if ( ! current_user_can( 'manage_options' ) ) {
                 return;
             }
-            if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'jet_abaf_save_settings') {
+            if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'jet_abaf_qefjb_save_settings') {
                 return;
             }
             $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
@@ -233,7 +280,9 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 'out_of_stock' => 'Currently not in stock, please contact us for options',
                 'no_units_available_date' => 'No units available for this date',
                 'add_to_cart_text' => 'View details',
-                'single_add_to_cart_text' => 'Add to cart'
+                'single_add_to_cart_text' => 'Add to cart',
+                'cooldown' => 0,
+                'warmup' => 0
             ];
         }
 
@@ -474,8 +523,10 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             if(!is_product())
                 return;
             $pid = get_the_ID();
+            $product = wc_get_product($pid);
             $all_units = jet_abaf()->db->get_apartment_units( $pid );
             $days = [];
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
             if(!empty($all_units)){
                 $max = count($all_units);
                 $test_range = [
@@ -491,16 +542,28 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                         if ( !isset( $booked_unit['status'] ) || !in_array( $booked_unit['status'], $skip_statuses ) ) {
                             $current_date = strtotime(date('d-m-Y 00:00:00', $booked_unit['check_in_date'])); //fix time issues
                             $check_out_date =strtotime(date('d-m-Y 20:00:00', $booked_unit['check_out_date'])); //fix time issues
-                            $date_before = date('d-m-Y', strtotime('-1 day', $current_date));
-                            if (isset($days[$date_before]))
-                                $days[$date_before]++;
-                            else
-                                $days[$date_before] = 1;
-                            $date_after = date('d-m-Y', strtotime('+1 day', $check_out_date));
-                            if (isset($days[$date_after]))
-                                $days[$date_after]++;
-                            else
-                                $days[$date_after] = 1;
+                            $product_cooldown = $product->get_meta('_qefjb_cooldown', true);
+                            if(!empty($options['cooldown']) || $product_cooldown!=="") {
+                                $cooldown = $product_cooldown!=="" ? $product_cooldown : $options['cooldown'];
+                                for($i = 1; $i <= $cooldown; $i++) {
+                                    $date_before = date('d-m-Y', strtotime('-'.$i.' day', $current_date));
+                                    if (isset($days[$date_before]))
+                                        $days[$date_before]++;
+                                    else
+                                        $days[$date_before] = 1;
+                                }
+                            }
+                            $product_warmup = $product->get_meta('_qefjb_warmup', true);
+                            if(!empty($options['warmup']) || $product_warmup!=="") {
+                                $warmup = $product_warmup!=="" ? $product_warmup : $options['warmup'];
+                                for($i = 1; $i <= $warmup; $i++) {
+                                    $date_after = date('d-m-Y', strtotime('+'.$i.' day', $check_out_date));
+                                    if (isset($days[$date_after]))
+                                        $days[$date_after]++;
+                                    else
+                                        $days[$date_after] = 1;
+                                }
+                            }
                             while ($current_date <= $check_out_date) {
                                 $date = date('d-m-Y', $current_date);
                                 if (isset($days[$date])) {
@@ -516,7 +579,6 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             }else{
                 $max = 9999;
             }
-            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
             ob_start();?>
                 <script>
                 const JetBookingAgendaBlocks = <?php echo json_encode(['max'=>$max,'blocks'=>$days]); ?>;

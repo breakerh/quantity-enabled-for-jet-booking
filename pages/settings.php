@@ -75,6 +75,24 @@
                             <input type="text" name="data[out_of_stock]" id="abaf-out_of_stock" placeholder="Currently not in stock, please contact us for options" value="<?=$settings['out_of_stock']??''?>" class="cx-vui-input size-fullwidth">
                         </div>
                     </div>
+                    <div class="cx-vui-component cx-vui-component--equalwidth">
+                        <div class="cx-vui-component__meta">
+                            <label class="cx-vui-component__label">Cooldown time before bookings?</label>
+                            <div class="cx-vui-component__desc">How many days do you block any new bookings before the actual booking?</div>
+                        </div>
+                        <div class="cx-vui-component__control">
+                            <input type="number" name="data[cooldown]" id="abaf-cooldown" placeholder="0" value="<?=$settings['cooldown']??''?>" class="cx-vui-input size-fullwidth">
+                        </div>
+                    </div>
+                    <div class="cx-vui-component cx-vui-component--equalwidth">
+                        <div class="cx-vui-component__meta">
+                            <label class="cx-vui-component__label">Warmup time after bookings?</label>
+                            <div class="cx-vui-component__desc">How many days do you block any new bookings after the actual booking?</div>
+                        </div>
+                        <div class="cx-vui-component__control">
+                            <input type="number" name="data[warmup]" id="abaf-warmup" placeholder="0" value="<?=$settings['warmup']??''?>" class="cx-vui-input size-fullwidth">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
