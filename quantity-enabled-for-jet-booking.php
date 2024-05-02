@@ -112,7 +112,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             if($product->get_type() !== 'jet_booking')
                 return $args;
             $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
-            if(isset($options['limit_quantity']) || $options['limit_quantity'] !== 'on')
+            if(!isset($options['limit_quantity']) || $options['limit_quantity'] !== 'on')
                 return $args;
             $args['max_value'] = count(jet_abaf()->db->get_apartment_units( $product->get_id() ));
             return $args;
