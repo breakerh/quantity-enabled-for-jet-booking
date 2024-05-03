@@ -5,7 +5,7 @@ Donate link: https://fullstak.nl//
 Tags: jetbooking, elementor, quantity
 Requires at least: 5.9
 Tested up to: 6.4.3
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 Requires PHP: 8.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -18,6 +18,10 @@ This plugin adds the ability to set the quantity of the Jet Booking plugin witho
 It uses the product units and shows them grouped in the cart etc..
 
 == Changelog ==
+
+= 1.2.3 =
+* Issue #1 fixed: The quantity was not being saved in the cart or respected the product his max.
+And the calculation and checks were missing.
 
 = 1.2.2 =
 * Added the function to restrict the max quantity to match the number of units created.
@@ -40,6 +44,7 @@ It uses the product units and shows them grouped in the cart etc..
 
 == Upgrade Notice ==
 
+= 1.2.3 =
 = 1.2.2 =
 Nothing to mention
 

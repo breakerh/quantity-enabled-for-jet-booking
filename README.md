@@ -38,6 +38,10 @@
 
 ## Changelog
 
+### 1.2.3
+* Issue #1 fixed: The quantity was not being saved in the cart or respected the product his max.
+  And the calculation and checks were missing.
+
 ### 1.2.2
 * Added the function to restrict the max quantity to match the number of units created
 
@@ -59,7 +63,7 @@
 
 ## Upgrade Notice
 
-### 1.2.2
+### 1.2.2 & 1.2.3
 Nothing to mention
 
 ### 1.2.1
