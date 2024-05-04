@@ -52,7 +52,7 @@ Tailor the plugin to fit your specific needs with customizable cooldown and warm
 
 ## Roadmap
 
-- [ ] Possibility to set cooldown and warmup, show stock, and max quantity also on category level
+- [ ] Missing something? Let me know!
 
 ## Changelog
 
