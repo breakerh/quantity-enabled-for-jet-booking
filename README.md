@@ -1,15 +1,33 @@
 # Quantity Enabled for Jet Booking
+![Quantity Enabled for Jet Booking](https://i.imgur.com/UpkDdck.png)
+<br/><br/><br/>
+![GitHub Release](https://img.shields.io/github/v/release/breakerh/quantity-enabled-for-jet-booking) &nbsp;&nbsp;&nbsp;&nbsp;
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/breakerh/quantity-enabled-for-jet-booking) &nbsp;&nbsp;&nbsp;&nbsp; 
+![GitHub Issues or Pull Requests](https://img.shields.io/github/issues-pr/breakerh/quantity-enabled-for-jet-booking) &nbsp;&nbsp;&nbsp;&nbsp;
 
-| **Plugin name**       | Quantity Enabled for Jet Booking          |
-|-----------------------|-------------------------------------------|
-| **Contributors**      | breakerh                                  |
-| **Donate link**       | https://paypal.me/bramhammer              |
-| **Requires at least** | Wordpress 5.9                             |
-| **Tested up to**      | Wordpress 6.5.2                           |
-| **Stable tag**        | 1.2.2                                     |
-| **Requires PHP**      | 8.0                                       |
-| **License**           | GPLv3 or later                            |
-| **License URI**       | https://www.gnu.org/licenses/gpl-3.0.html |
+## Requirements
+![Static Badge](https://img.shields.io/badge/Wordpress-%3E%3D%205.9-green) &nbsp;&nbsp;&nbsp;&nbsp;
+![Static Badge](https://img.shields.io/badge/JetBooking-%3E%3D%203.3.1-green?link=https%3A%2F%2Fpaypal.me%2Fbramhammer)
+
+
+## Like the plugin? 
+I am a full-time developer and I maintain this plugin in my free time. If it is helpful to you, please consider sponsoring me.  
+**Plus it helps me convince my wife to keep doing open source 😜**  
+
+[![Static Badge](https://img.shields.io/badge/Sponsor_me_through-PayPal-blue)](https://paypal.me/bramhammer) [![Static Badge](https://img.shields.io/badge/or-red)](https://bunq.me/bramhammer)
+[![Static Badge](https://img.shields.io/badge/Sponsor_me_through-Card%20%2F%20Ideal-blue?link=https%3A%2F%2Fpaypal.me%2Fbramhammer)](https://bunq.me/bramhammer)   
+
+Can't or don't want to sponsor? A star on GitHub is also very much appreciated! :star:
+
+## Short Description
+**Quantity Enabled for Jet Booking** is a WordPress plugin that allows your customers to set the quantity of their rental products with ease.   
+No more tedious repetition. Whether it's 5 lamps or 50, your customers can specify the quantity they need in just one go.   
+Any custom text we've added can be set on the settings page and is compatible with WPML and (almost?) all other **multilanguage** plugins!  
+Tailor the plugin to fit your specific needs with customizable cooldown and warmup periods, both globally and on a product level.
+
+## Screenshots
+<img src="https://i.imgur.com/FCrlCac.png" alt="Quantity Enabled for Jet Booking" width="500px">
+<img src="https://i.imgur.com/1vyH5Ev.gif" alt="Quantity Enabled for Jet Booking" width="500px">
 
 ## Description
 
@@ -38,42 +56,9 @@
 
 ## Changelog
 
-### 1.2.3
-* Issue #1 fixed: The quantity was not being saved in the cart or respected the product his max.
-  And the calculation and checks were missing.
+See the [changelog](CHANGELOG.md) for a history of changes.
 
-### 1.2.2
-* Added the function to restrict the max quantity to match the number of units created
+## Support
 
-### 1.2.1
-* Fixed a bug where the settings page was not saving
-* Added cooldown and warmup on a global level and per product level
-
-### 1.2.0
-* Added settings page for variables and features
-
-### 1.1.1
-* Quantity pushed with add to cart instead of for loop
-
-### 1.1.0
-* Added enhanced add to cart for variations
-
-### 1.0
-* Initial release
-
-## Upgrade Notice
-
-### 1.2.2 & 1.2.3
-Nothing to mention
-
-### 1.2.1
-Version 1.2.0 had default cooldown and warmup of 1 day. This has been reverted to 0. This means that the cooldown and warmup are disabled by default. If you want to enable them, you can do so in the settings page. 
-
-### 1.2.0
-Settings page added. Text can be added and features can be enabled/disabled
-
-### 1.1.1 & 1.1.0
-Nothing to mention
-
-### 1.0
-Initial release
+Please [open an issue](https://github.com/breakerh/quantity-enabled-for-jet-booking/issues/new/choose) for support. Want something custom?   
+Feel free to [contact me](mailto:bhammer93@gmail.com) for custom work.
