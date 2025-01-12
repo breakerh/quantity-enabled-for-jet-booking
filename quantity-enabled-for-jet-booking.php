@@ -47,7 +47,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
          * @since 1.0.0
          * @var string
          */
-        private $version = '1.2.3';
+        private $version = '1.3.0';
 
         /**
          * Require Elementor Version
@@ -97,10 +97,13 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             add_filter( 'woocommerce_add_to_cart_validation', [$this, 'add_to_cart_validation'], 10, 3 );
             add_filter( 'woocommerce_update_cart_validation', [$this, 'update_cart_validation'], 10, 4 );
             add_filter( 'woocommerce_update_cart_action_cart_updated', [$this, 'cart_update_variable'], 10, 1 );
+            add_filter( 'woocommerce_get_item_data', [$this, 'get_item_data'], 10, 2 );
+            add_filter( 'woocommerce_store_api_product_quantity_editable', [$this, 'store_api_product_quantity_editable'], 10, 2 );
 
             add_action( 'wp_ajax_jet_booking_add_cart_single_product', [$this, 'add_cart_product_ajax'], 10 );
             add_action( 'wp_ajax_nopriv_jet_booking_add_cart_single_product', [$this, 'add_cart_product_ajax'], 10 );
 
+            add_action( 'woocommerce_before_calculate_totals', [$this, 'before_calculate_totals'], 10, 1 );
             add_filter( 'woocommerce_product_data_tabs', [$this, 'add_product_data_tab'], 10, 1 );
             add_action( 'woocommerce_product_data_panels', [$this, 'quantity_panel'], 10, 0 );
             add_action( 'woocommerce_admin_process_product_object', [$this, 'save_product_data'], 10, 1 );
@@ -135,13 +138,18 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             $product= wc_get_product( $values['product_id'] );
             if($product->get_type() !== 'jet_booking')
                 return $passed;
-            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
             if(!isset($options['limit_quantity']) || $options['limit_quantity'] !== 'on')
                 return $passed;
             $oldQuantity = 0;
-            foreach(WC()->cart->get_cart() as $cart_item) {
-                if($cart_item['product_id'] === $values['product_id'])
-                    $oldQuantity += $values['quantity'];
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
+            if (isset($options['use_cart_item_data']) && $options['use_cart_item_data'] === 'on') {
+                // do something
+            }else {
+                foreach ( WC()->cart->get_cart() as $cart_item ) {
+                    if ( $cart_item['product_id'] === $values['product_id'] ) {
+                        $oldQuantity += $values['quantity'];
+                    }
+                }
             }
             $units = jet_abaf()->db->get_apartment_units( $values['product_id'] );
             if($quantity < $oldQuantity) {
@@ -387,6 +395,9 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 wp_enqueue_style('quantity-jet-booking-dash', $jet_booking_plugin_url . 'assets/css/admin/dashboard.css', [], $this->version);
                 wp_enqueue_style('quantity-jet-booking-settings', plugins_url('/assets/css/admin/settings.css', __FILE__ ), [], $this->version);
                 wp_enqueue_script('quantity-jet-booking-settings', plugins_url('/assets/js/admin/settings'.($this->debug?'':'.min').'.js', __FILE__ ), [], $this->version, ['strategy'=>'defer','in_footer'=>true]);
+                wp_localize_script('quantity-jet-booking-settings', 'jet_abaf_qefjb', [
+                    'date_not_available_qty' => __('Selected dates are not available for {0} units. Please select another date if you need more units.', 'quantity-enabled-for-jet-booking'),
+                ]);
             }
         }
 
@@ -469,7 +480,9 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 'single_add_to_cart_text' => 'Add to cart',
                 'cooldown' => 0,
                 'warmup' => 0,
-                'limit_quantity' => 'off'
+                'limit_quantity' => 'off',
+                'use_cart_item_data' => 'off',
+                'hide_wc_qty' => 'off'
             ];
         }
 
@@ -503,6 +516,9 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 //wp_enqueue_script('quantity-jet-booking-init');
                 //wp_add_inline_script('quantity-jet-booking', $this->get_blocked_days(),'before');
                 wp_enqueue_style('quantity-jet-booking');
+            }elseif(is_cart() || is_checkout()) {
+                wp_add_inline_style('quantity-jet-booking', $this->generate_css('cart'));
+                wp_enqueue_style('quantity-jet-booking');
             }
         }
 
@@ -511,19 +527,21 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
          *
          * @return string
          */
-        public function generate_css() {
+        public function generate_css($page='product') {
             $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
+
             ob_start();
-            if(isset($options['hide_check_in_out']) && $options['hide_check_in_out'] === 'on'):
-            ?>
-                .jet-booking-form > .jet-abaf-product-check-in-out{
+            if($page === 'product'){
+                if(isset($options['hide_check_in_out']) && $options['hide_check_in_out'] === 'on'):
+                    ?>
+                    .jet-booking-form > .jet-abaf-product-check-in-out{
                     display: none;
-                }
-            <?php
-            endif;
-            if(isset($options['show_stock']) && $options['show_stock'] === 'on'):
-            ?>
-                .stock-info {
+                    }
+                <?php
+                endif;
+                if(isset($options['show_stock']) && $options['show_stock'] === 'on'):
+                    ?>
+                    .stock-info {
                     font-family: var(--e-global-typography-primary-font-family), sans-serif;
                     font-weight: var(--e-global-typography-primary-font-weight);
                     text-transform: var(--e-global-typography-primary-text-transform);
@@ -534,16 +552,50 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                     border-radius: 2px;
                     margin-left: auto;
                     max-width: 259px;
-                }
-                .out-of-stock {
+                    }
+                    .out-of-stock {
                     background: white;
                     color: var(--e-global-color-accent);
                     font-size: 0.8rem;
                     border: 1px solid var(--e-global-color-accent);
-                }
-            <?php
-            endif;
+                    }
+                <?php
+                endif;
+            }else if($page === 'cart') {
+                if(isset($options['hide_wc_qty']) && $options['hide_wc_qty'] === 'on'):
+                    ?>
+                    .wc-block-components-quantity-selector:has(input[readonly]){
+                    display: none;
+                    }
+                <?php
+                endif;
+            }
             return ob_get_clean();
+        }
+
+        public function store_api_product_quantity_editable($editable, $product) {
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
+            if($product->get_type() !== 'jet_booking')
+                return $editable;
+            if(isset($options['use_cart_item_data']) && $options['use_cart_item_data'] === 'on')
+                return false;
+            return $editable;
+        }
+
+        /**
+         * Get the blocked days
+         *
+         * @return void
+         */
+        public function get_item_data($item_data, $cart_item) {
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
+            if(isset($options['use_cart_item_data']) && $options['use_cart_item_data'] === 'on') {
+                $item_data[] = [
+                    'key' => __('Quantity', 'quantity-enabled-for-jet-booking'),
+                    'value' => $cart_item['qefjb']['quantity'] . ' ' . __('units', 'quantity-enabled-for-jet-booking')
+                ];
+            }
+            return $item_data;
         }
 
         /**
@@ -560,10 +612,11 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
             if ( ! $adding_to_cart ) {
                 return;
             }
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
             $add_to_cart_handler = apply_filters( 'woocommerce_add_to_cart_handler', $adding_to_cart->get_type(), $adding_to_cart );
+            $quantity = empty($_REQUEST['quantity']) ? 1 : wc_stock_amount(wp_unslash($_REQUEST['quantity']));  // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             if ( 'variable' === $add_to_cart_handler || 'variation' === $add_to_cart_handler ) {
                 $variation_id = empty($_REQUEST['variation_id']) ? '' : absint(wp_unslash($_REQUEST['variation_id']));  // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                $quantity = empty($_REQUEST['quantity']) ? 1 : wc_stock_amount(wp_unslash($_REQUEST['quantity']));  // phpcs:ignore WordPress.Security.NonceVerification.Recommended
                 $variations = [];
 
                 foreach ($_REQUEST as $key => $value) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -573,20 +626,87 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
 
                     $variations[sanitize_title(wp_unslash($key))] = wp_unslash($value);
                 }
-
-                for($i=0;$i<$quantity;$i++)
-                    WC()->cart->add_to_cart($product_id, 1, $variation_id, $variations);
+                if (isset($options['use_cart_item_data']) && $options['use_cart_item_data'] === 'on') {
+                    // Custom logic to handle cart item data
+                    $key = WC()->cart->add_to_cart( $product_id, 1,  $variation_id,$variations,[
+                        'qefjb' => [
+                            'date' => $_POST['jet_abaf_field'],
+                            'quantity' => $quantity,
+                            'bookings' => []
+                        ]
+                    ]);
+                    $this->add_bookings($key, $_POST['jet_abaf_field'], $quantity, $product_id);
+                }else{
+                    for($i=0;$i<$quantity;$i++)
+                        WC()->cart->add_to_cart($product_id, 1, $variation_id, $variations);
+                }
             }else{
-                $quantity = empty($_REQUEST['quantity']) ? 1 : wc_stock_amount(wp_unslash($_REQUEST['quantity']));  // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-
-                for($i=0;$i<$quantity;$i++) {
-                    WC()->cart->add_to_cart($product_id, 1);
+                if (isset($options['use_cart_item_data']) && $options['use_cart_item_data'] === 'on') {
+                    // Custom logic to handle cart item data
+                    $key = WC()->cart->add_to_cart( $product_id, 1,  0,[],[
+                        'qefjb' => [
+                            'date' => $_POST['jet_abaf_field'],
+                            'quantity' => $quantity,
+                            'bookings' => []
+                        ]
+                    ]);
+                    $this->add_bookings($key, $_POST['jet_abaf_field'], $quantity, $product_id);
+                }else {
+                    for ( $i = 0; $i < $quantity; $i ++ ) {
+                        WC()->cart->add_to_cart( $product_id, 1 );
+                    }
                 }
             }
             if (is_callable(['WC_AJAX', 'get_refreshed_fragments'])) {
                 WC_AJAX::get_refreshed_fragments();
             }
             die();
+        }
+
+        public function add_bookings($key, $dates, $quantity, $product_id) {
+            $_dates = explode(' - ', $dates);
+            $check_in_date = strtotime($_dates[0]);
+            $check_out_date = strtotime($_dates[1]);
+            $schedule = Cron_Manager::instance()->get_schedules( 'jet-booking-clear-on-expire' );
+            for($i=1;$i<$quantity;$i++) {
+                $args  = [
+                    'apartment_id'   => $product_id,
+                    'status'         => 'on-hold',
+                    'check_in_date'  => $check_in_date,
+                    'check_out_date' => $check_out_date,
+                ];
+                if ( $args['check_in_date'] === $args['check_out_date'] ) {
+                    $args['check_out_date'] += 12 * HOUR_IN_SECONDS;
+                }
+                if ( is_user_logged_in() ) {
+                    $args['user_id'] = get_current_user_id();
+                }
+                $booking_id = jet_abaf()->db->insert_booking( $args );
+                if ( $booking_id ) {
+                    $args['check_in_date'] ++;
+                    WC()->cart->cart_contents[ $key ]['qefjb']['bookings'][] = wp_parse_args( [ 'booking_id' => $booking_id ], $args );
+                    $schedule->schedule_single_event( [ $booking_id ] );
+                    do_action( 'jet-booking/wc-integration/booking-inserted', $booking_id );
+                }
+            }
+        }
+
+        /**
+         * Before calculate totals
+         *
+         * @param array $cart_object
+         * @return void
+         */
+        public function before_calculate_totals($cart_object){
+            $options = get_option('jet_abaf_qefjb_settings', $this->default_values());
+            if(!isset($options['use_cart_item_data']) || $options['use_cart_item_data'] !== 'on')
+                return;
+            foreach ( $cart_object->get_cart() as $cart_item_key => $cart_item ) {
+                if ( isset( $cart_item[ jet_abaf()->wc->data_key ] ) ) {
+                    $cart_item_data = $cart_item[ 'qefjb' ];
+                    $cart_item['data']->set_price($cart_item['data']->price * $cart_item_data['quantity']);
+                }
+            }
         }
 
         /**
@@ -598,6 +718,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
          * @return string
          */
         public function customize_cart_item_subtotal( $product_subtotal, $cart_item, $cart_item_key ) {
+            //$options = get_option('jet_abaf_qefjb_settings', $this->default_values());
             $product_id = $cart_item['product_id'];
             $qty = 0;
             $cart = WC()->cart;
@@ -688,6 +809,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
          * @return bool
          */
         public function filter_cart_contents( $visible, $cart_item, $cart_item_key ) {
+            var_dump($cart_item);
             $product_id = $cart_item['product_id'];
             $seen = [];
             $cart = WC()->cart;
@@ -769,7 +891,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                 $max = 9999;
             }
             ob_start();?>
-                <script>
+            <script>
                 const JetBookingAgendaBlocks = <?php echo json_encode(['max'=>$max,'blocks'=>$days]); ?>;
                 const createStockElements = (totalStock) => {
                     const stockElement = document.createElement('div');
@@ -808,7 +930,7 @@ if ( ! class_exists( 'Quantity_Enabled_Jet_Booking' ) ) {
                     window.JetPlugins.hooks.addFilter('jet-booking.calendar.config','jetBooking',override_config)
                     window.JetPlugins.hooks.addFilter('jet-booking.input.config','jetBooking',override_config)
                 });
-                </script>
+            </script>
             <?php
             echo ob_get_clean();
         }

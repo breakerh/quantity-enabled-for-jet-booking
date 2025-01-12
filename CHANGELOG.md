@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.3.0 - 2025-01-12 [expected]
+* Added the fix that quantity can't be set higher than available units after date selection
+* Blocks are updated immediately after adding to cart, without reload.
+* Added small (better) error message if the product is not available anymore when altering quantity
+* Added support for WC blocks **still experimental!!**
+  * If enabled, products will also be combined on the cart page
+  * If hide quantity on cart page is enabled field will be hidden for reservation items.
+  * If quantity is changed mutations will also reflect with bookings
+
 ## 1.2.3 - 2024-05-04
 * Issue #1 fixed: The quantity was not being saved in the cart or respected the product his max.
   And the calculation and checks were missing.

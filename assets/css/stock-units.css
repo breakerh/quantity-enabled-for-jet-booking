@@ -13,3 +13,28 @@
     font-weight: 600;
     padding-top: 10px;
 }
+.jet-abaf-product-quantity-error {
+    display: block;
+    background: #fff0f0;
+    position: relative;
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #f00;
+    font-size: .9rem;
+    border-radius: 5px;
+}
+.jet-abaf-product-quantity-error .jet-abaf-product-quantity-error-message {
+    color: #f00;
+    font-weight: 400;
+    margin-right: 10px;
+}
+.jet-abaf-product-quantity-error .jet-abaf-product-quantity-error-close {
+    position: absolute;
+    top: 0px;
+    right: 5px;
+    cursor: pointer;
+    color: #f00;
+    font-size: 1.2rem;
+    line-height: 1.2rem;
+}

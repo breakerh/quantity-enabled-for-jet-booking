@@ -106,8 +106,36 @@
                             <input type="number" name="data[warmup]" id="abaf-warmup" placeholder="0" value="<?=$settings['warmup']??''?>" class="cx-vui-input size-fullwidth">
                         </div>
                     </div>
+
+                    <div class="cx-vui-component cx-vui-component--equalwidth">
+                        <div class="cx-vui-component__meta">
+                            <label class="cx-vui-component__label"><strong>(Experimental)</strong> Use cart item data instead of filters?</label>
+                            <div class="cx-vui-component__desc">Mostly used for WC blocks compatibility. Please test thoroughly before using on live environment.</div>
+                        </div>
+                        <div class="cx-vui-component__control">
+                            <div tabindex="0" class="cx-vui-switcher <?=(isset($settings['use_cart_item_data'])&&$settings['use_cart_item_data']==='on')?'cx-vui-switcher--on':'cx-vui-switcher--off'?>">
+                                <input name="data[use_cart_item_data]" type="hidden" value="<?=$settings['use_cart_item_data']??'off'?>" class="cx-vui-switcher__input">
+                                <div class="cx-vui-switcher__panel"></div>
+                                <div class="cx-vui-switcher__trigger"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cx-vui-component cx-vui-component--equalwidth">
+                        <div class="cx-vui-component__meta">
+                            <label class="cx-vui-component__label"><strong>(Experimental)</strong> Hide quantity input on cart page for WC blocks</label>
+                            <div class="cx-vui-component__desc">
+                                This will hide the quantity input on the cart page for WC blocks compatibility.
+                            </div>
+                        </div>
+                        <div class="cx-vui-component__control">
+                            <div tabindex="0" class="cx-vui-switcher <?=(isset($settings['hide_wc_qty'])&&$settings['hide_wc_qty']==='on')?'cx-vui-switcher--on':'cx-vui-switcher--off'?>">
+                                <input name="data[hide_wc_qty]" type="hidden" value="<?=$settings['hide_wc_qty']??'off'?>" class="cx-vui-switcher__input">
+                                <div class="cx-vui-switcher__panel"></div>
+                                <div class="cx-vui-switcher__trigger"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>

@@ -1,3 +1,14 @@
+if (!String.prototype.format) {
+    String.prototype.format = function() {
+        var args = arguments;
+        return this.replace(/{(\d+)}/g, function(match, number) {
+            return typeof args[number] != 'undefined'
+                ? args[number]
+                : match
+                ;
+        });
+    };
+}
 (function() {
 
     const $bookingProductForm = jQuery(document).find('.jet-booking-form');
@@ -6,7 +17,7 @@
     }
     const $bookingButton = $bookingProductForm.find('.single_add_to_cart_button');
     const $bookingQty = $bookingProductForm.find('.quantity input.qty');
-	window.JetPlugins.hooks.addFilter('jet-booking.calendar.config','jet-booking',config=>{ return{...config,stickyMonths:true}; })
+    window.JetPlugins.hooks.addFilter('jet-booking.calendar.config','jet-booking',config=>{ return{...config,stickyMonths:true}; })
     jQuery(document).on('jet-booking/init-calendar', () => {
         jQuery(document).unbind('change.JetBookingProduct');
         jQuery(document).unbind('click.JetWooBuilder');
@@ -31,6 +42,29 @@
                 alert(errorThrown);
             });
         });
+        const showQuantityError = (message) => {
+            if(document.querySelector('.jet-abaf-product-quantity-error'))
+                document.querySelector('.jet-abaf-product-quantity-error').remove();
+            const errorWrapper = document.createElement('div');
+            errorWrapper.classList.add('jet-abaf-product-quantity-error');
+            const error = document.createElement('div');
+            error.classList.add('jet-abaf-product-quantity-error-message');
+            error.innerHTML = message;
+            errorWrapper.appendChild(error);
+            const errorClose = document.createElement('span');
+            errorClose.classList.add('jet-abaf-product-quantity-error-close');
+            errorClose.innerHTML = '&times;';
+            errorClose.addEventListener('click', () => {
+                errorWrapper.remove();
+            });
+            errorWrapper.appendChild(errorClose);
+            const parent = document.querySelector('.jet-abaf-product-check-in-out');
+            parent.parentNode.insertBefore(errorWrapper, parent);
+
+            setTimeout(() => {
+                errorWrapper.remove();
+            }, 5000);
+        }
         $bookingQty.on('change', (event) => {
             const dateField = document.querySelector('#jet_abaf_field');
             const date = dateField.value;
@@ -38,8 +72,26 @@
             window.jetBookingState.bookingCalendars[1].data('dateRangePicker').redraw()
             if (date?.length > 1) {
                 const [_startDate, _endDate] = date.split(' - ');
-                window.jetBookingState.bookingCalendars[1].data('dateRangePicker').setStart(moment(_startDate, dateFormat).format('YYYY-MM-DD'));
-                window.jetBookingState.bookingCalendars[1].data('dateRangePicker').setEnd(moment(_endDate, dateFormat).format('YYYY-MM-DD'));
+                const startBlock = moment(_startDate, dateFormat).format('YYYY-MM-DD');
+                const endBlock = moment(_endDate, dateFormat).format('YYYY-MM-DD');
+                if(typeof JetBookingAgendaBlocks !== 'undefined' && JetBookingAgendaBlocks['blocks']){
+                    const blocks = JetBookingAgendaBlocks['blocks'];
+                    const blockDates = Object.keys(blocks).map(block => moment(block, 'DD-MM-YYYY').format('YYYY-MM-DD'));
+                    const blockDatesSet = new Set(blockDates);
+                    const selectedDates = [];
+                    let current = startBlock;
+                    while(current <= endBlock){
+                        selectedDates.push(current);
+                        current = moment(current).add(1, 'days').format('YYYY-MM-DD');
+                    }
+                    const intersection = selectedDates.filter(date => blockDatesSet.has(date));
+                    if(intersection.length) {
+                        showQuantityError(jet_abaf_qefjb.date_not_available_qty.format($bookingQty.val()));
+                        $bookingQty.val($bookingQty.val() - 1);
+                    }
+                }
+                window.jetBookingState.bookingCalendars[1].data('dateRangePicker').setStart(startBlock);
+                window.jetBookingState.bookingCalendars[1].data('dateRangePicker').setEnd(endBlock);
             }
         })
         $bookingButton.on('click.JetWooBuilder', function(event) {
@@ -47,6 +99,12 @@
             const serialize = $bookingProductForm.closest('form').serialize();
             const pid = $bookingButton.val();
             $bookingButton.addClass("loading");
+            const dateField = document.querySelector('#jet_abaf_field');
+            const date = dateField.value;
+            const dateFormat = dateField.getAttribute('data-format');
+            const [_startDate, _endDate] = date.split(' - ');
+            const startBlock = moment(_startDate, dateFormat);
+            const endBlock = moment(_endDate, dateFormat);
             jQuery.ajax({
                 url: window.jetWooBuilderData.ajax_url,
                 method: 'POST',
@@ -57,6 +115,19 @@
                     if(t){
                         jQuery(document.body).trigger("wc_fragment_refresh");
                         jQuery(document.body).trigger("added_to_cart", [t.fragments, t.cart_hash, $bookingButton]);
+                        if(typeof JetBookingAgendaBlocks !== 'undefined' && JetBookingAgendaBlocks['blocks']){
+                            const selectedDates = [];
+                            let current = startBlock;
+
+                            while(current.unix()<=endBlock.unix()){
+                                selectedDates.push(current.format('DD-MM-YYYY'));
+                                current.add(1,'d')
+                            }
+                            selectedDates.forEach(date => {
+                                JetBookingAgendaBlocks['blocks'][date] = parseInt(jQuery(document).find('.jet-booking-form').find('.quantity input.qty').val());
+                            })
+                            window.jetBookingState.bookingCalendars[1].data('dateRangePicker').redraw()
+                        }
                         if(t.fragments?.notices_html)
                             jQuery(".woocommerce-notices-wrapper").html(t.fragments?.notices_html)
                     }
